@@ -94,6 +94,11 @@ def
  while 2pop)
 def
 
+-- Revert -- (seq -- new-seq)
+(revert) (
+ len 2 - dup rot (dup 0 >) (swap -> 1 -) while pop
+ swap -rot (dup 0 >) (<- swap 1 - -> rot <-) while pop
+) def
 
 -- Clean all main stack (n.. -- )
 -- (clear) (len (dup 0 >) (-> pop <- 1 -) while pop)  def
