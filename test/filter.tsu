@@ -1,0 +1,5 @@
+-- filter.tsu
+"stdlib.tsu" import
+
+1 2 3 (odd?) filter ps
+-- 1 3

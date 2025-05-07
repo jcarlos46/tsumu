@@ -1,0 +1,14 @@
+{
+    "configurations": [
+      {
+        "type": "lua-local",
+        "request": "launch",
+        "name": "Debug",
+        "program": {
+          "lua": "lua5.4",
+          "file": "tsumu.lua"
+        },
+        "args": ["test/reduce.tsu"]
+      }
+    ]
+  }

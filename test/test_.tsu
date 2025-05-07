@@ -1,0 +1,45 @@
+
+"stdlib.tsu" import
+
+(assert)
+  (io-write eval (": PASSED") (": FAILED") ifelse print clear)
+def
+
+(0?) (0 =) def
+(1?) (1 =) def
+
+("Foo" "bar" = 0?) "Testing equal function #1" assert
+("Foo" "Foo" = 1?) "Testing equal function #2" assert
+
+(1 2 3 dup 3 =)     "Testing dup  function"  assert
+(1 2 3 over 2 =)    "Testing over function" assert
+(1 2 3 swap 2 =)    "Testing swap function" assert
+(1 2 3 2pop len 1?) "Testing 2pop function" assert
+
+(1 2 3 2rot 1?)                "Testing 2rot function" assert
+(1 2 3 2dup 3 = swap 3 = and)  "Testing 2dup function" assert
+(1 2 3 2over 3 = swap 2 = and) "Testing 2dup function" assert
+
+(0 not 1?)   "Testing not #1 function" assert
+(1 not 0?)   "Testing not #2 function" assert
+(1 0 != 1?)  "Testing != function"     assert
+(1 1 and 1?) "Testing and #1 function" assert
+(0 1 and 0?) "Testing and #2 function" assert
+(0 1 or 1?)  "Testing or #1 function"  assert
+(0 0 or 0?)  "Testing or #2 function"  assert
+(0 1 xor 1?) "Testing xor #1 function" assert
+(1 1 xor 0?) "Testing xor #2 function" assert
+
+(-10 abs 10 =) "Testing abs function" assert
+
+(5 4 mod 1?) "Testing mod function" assert
+
+(1 odd? 1?)  "Testing odd? function"  assert
+(2 even? 1?) "Testing even? function" assert
+
+(10 11 max 11 =) "Testing max function" assert
+(10 11 min 10 =) "Testing min function" assert
+
+(4 fact 24 =) "Testing fact #1 function" assert
+(5 ! 120 =)   "Testing fact #2 function" assert
+

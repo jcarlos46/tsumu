@@ -1,0 +1,2 @@
+(cat) ("cat" " " concat os-execute) def
+cat print-stack
