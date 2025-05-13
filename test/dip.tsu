@@ -1,0 +1,4 @@
+-- dip.tsu
+"stdlib" import
+
+1 2 3 (1 +) dip ps

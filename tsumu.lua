@@ -17,7 +17,7 @@ local EXIT = false
 local INT_MODE = false
 
 local function error_msg(msg) 
-    if int_mode then
+    if INT_MODE then
         print(msg)
     else
         error(msg)
@@ -128,7 +128,8 @@ end
 local function swap()
    local a = pop()
    local b = pop()
-   push(b) push(a)
+   push(a)
+   push(b)
 end
 
 local function compose()
@@ -151,16 +152,6 @@ local function _while()
         run(body)
     end
     TOTAL_LOOP = 0
-end
-
-local function rot()
-    local last = table.remove(STACK)
-    table.insert(STACK, 1, last)
-end
-
-local function _rot()
-    local first = table.remove(STACK,1)
-    table.insert(STACK, first)
 end
 
 local function max_loop_def()
@@ -208,10 +199,12 @@ local function exit()
 end
 
 local function os_execute()
-    local handle = io.popen(pop())
-    local result = handle:read("*a")
-    handle:close()
-    push(trim(result))
+    local handle = io.popen(tostring(pop()))
+    if handle ~= nil then
+        local result = handle:read("*a")
+        push(trim(result))
+        handle:close()
+    end
 end
 
 -- Operações disponíveis
@@ -241,10 +234,9 @@ NAMES["pick"] = pick
 NAMES["cond"] = cond
 NAMES["while"] = _while
 NAMES["compose"] = compose
+NAMES["swap"] = swap
 NAMES["stash>"] = stash_in
 NAMES["<stash"] = stash_out
-NAMES["rot"] = rot
-NAMES["-rot"] = _rot
 NAMES["io-write"] = function() io.write(pop()) end
 NAMES["io-read"] = function() push(io.read()) end
 NAMES["emit"] = emit
@@ -309,7 +301,7 @@ function import(filename)
     end
     file:close()
 
-    if int_mode then
+    if INT_MODE then
         print("Tsumu: "..filename.." imported.")
     end
 
@@ -318,10 +310,10 @@ function import(filename)
 end
 
 if (arg[1] ~= nil) then
-    local filename = table.remove(arg,1)
     for i, u in ipairs(arg) do
-	push(u)
+        push(u)
     end
 end
+
 import("cli.tsu")
 

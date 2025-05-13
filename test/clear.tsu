@@ -1,0 +1,7 @@
+"stdlib" import
+
+1 2 3 4 5
+
+(len 0 >) (pop) while
+
+ps

@@ -1,0 +1,7 @@
+"stdlib" import
+
+1 2 1 cond print
+
+(if) (cond apply) def
+
+0 ("FOO" print) () if
