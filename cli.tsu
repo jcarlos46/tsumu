@@ -1,0 +1,23 @@
+"stdlib" import
+len print
+
+(running-cli) 0 def
+
+(welcome-msg)
+  ("Tsumu: interactive mode (ctrl+c or 'exit' to quit)" print)
+def
+
+len 0 > (import) ((running-cli) 1 def) if
+
+running-cli (int-mode welcome-msg) () if
+
+(running-cli) (
+  "> " io-write
+  io-read
+
+  dup trim "" = () (
+    dup trim "cls"  = ("clear" os-execute welcome-msg) () if
+    dup trim "exit" = ("See you soon!" print exit) () if
+    2dup trim "cls" != swap "exit" != and (apply) () if
+  ) if
+) while

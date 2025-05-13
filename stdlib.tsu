@@ -8,7 +8,7 @@
 (2rot)  (rot rot)      def
 (2pop)  (pop pop)      def
 
-(swap)  (0 pick 2 pick -> -> pop pop <- <-) def
+(swap)  (dup 2 pick -> -> pop pop <- <-) def
 
 -- OPERAÇÕES LÓGICAS
 (eq)   (=)           def
@@ -16,22 +16,21 @@
 (!=)   (= not)       def
 (and)  (* not not)   def
 (or)   (+ not not)   def
-(xor)  (= not) def
+(xor)  (= not)       def
+(if)   (cond apply)  def
 
--- Print with new line ( -- )
--- (print) (io-write "\\n" io-write) def
-
-(emit) (number-ascii io-write) def
-
--- Print stack alias ( -- )
-(ps) (print-stack) def
+-- Operações Padrões
+(dip)  (swap compose call) def
+(dipd) (swap dip) def
+(rol) (swap (swap) dip) def
+(-rol) ((swap) dip swap) def
 
 -- Eval alias ( expr -- expr-return... )
-(call) (eval) def
+(call)  (eval) def
+(apply) (eval) def
 
 -- printf (n... -- )
 (printf) ((dup 0 >) (swap emit 1 - ) while) def
-
 
 -- Factorial (n -- n')
 (fact) (dup 1 > (dup 1 - fact *) (pop 1) ifelse) def
@@ -53,11 +52,9 @@
 (min) (2over < (pop) (swap pop) ifelse) def
 -- 11 10 min ps  -- [10]
 
-
 -- Absolute (n -- n')
 (abs) (dup 0 < (-1 *) if) def
 -- -4 abs ps clear -- [4]
-
 
 -- Odd (n -- n')
 (odd?) (2 %) def
@@ -69,37 +66,55 @@
 (mod) (%) def
 
 
--- Reduce -- (seq.. expr -- expr-result?)
-(reduce) (len 1 - reduce-body) def
+-- Reduce -- ( seq expr -- n )
+(reduce) (len 1 - *reduce-body) def
 
--- Reduce-N -- (seq.. lenght expr -- expr-result?)
-(reduce-n) (swap reduce-body) def
+-- Reduce-N -- ( seq lenght expr -- n )
+(reduce-n) (swap *reduce-body) def
 
 -- Reduce body
-(reduce-body)
-((dup 1 >) (-> dup -> call <- <- 1 -) while 2pop)
+(*reduce-body)
+  ((dup 1 >) (-> dup -> call <- <- 1 -) while 2pop)
 def
 
--- Map -- (seq.. expr -- new-seq)
-(map) (len 1 - map-body) def
+-- Map -- ( seq expr -- seq' )
+(map) (len 1 - *map-body) def
 -- Map body
-(map-body)
-((dup 0 >) (-> dup -> call rot <- <- 1 -) while 2pop)
+(*map-body)
+  ((dup 0 >) (-> dup -> call rot <- <- 1 -) while 2pop)
 def
 
--- Filter -- (seq.. expr -- new-seq)
+-- Filter -- ( seq expr -- seq' )
 (filter)
- (len 1 - (dup 0 >)
-  (-> dup -> over swap call (rot) (pop) ifelse <- <- 1 -)
- while 2pop)
+  (len 1 - (dup 0 >)
+    (-> dup -> over swap call (rot) (pop) ifelse <- <- 1 -)
+  while 2pop)
 def
 
--- Revert -- (seq -- new-seq)
-(revert) (
- len 2 - dup rot (dup 0 >) (swap -> 1 -) while pop
- swap -rot (dup 0 >) (<- swap 1 - -> rot <-) while pop
-) def
+-- Revert -- ( seq -- seq' )
+(revert)
+  (len 2 - dup rot (dup 0 >) (swap -> 1 -) while pop
+   swap -rot (dup 0 >) (<- rot 1 -) while pop)
+def
 
--- Clean all main stack (n.. -- )
--- (clear) (len (dup 0 >) (-> pop <- 1 -) while pop)  def
+-- Clean all main stack -- ( seq -- )
+(clear) (len 1 (-> -> pop <- <-) loop) def
+
+-- Variable definiiton -- (value name -- )
+(var) (swap def) def
+
+-- Loop -- ( start until body -- )
+(loop) (*loop-pick > (*loop-down) (*loop-up) ifelse 2pop pop) def
+(*loop-up)
+    ((*loop-pick 1 + <) (dup -> call -> 1 + <- <-) while)
+def
+(*loop-down)
+    ((*loop-pick 1 - >) (dup -> call -> -> 1 - <- <-) while)
+def
+(*loop-pick) (2 pick 2 pick) def
+
+-- Stash
+-- Stash manipulation aliases
+(->) (stash>) def
+(<-) (<stash) def
 

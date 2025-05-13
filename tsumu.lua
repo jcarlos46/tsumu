@@ -10,7 +10,11 @@ VARS  = {}
 local process
 local run
 local import
-local int_mode = false
+local MAX_LOOP = 128
+local TOTAL_LOOP = 0
+local DEBUG_MODE = false
+local EXIT = false
+local INT_MODE = false
 
 local function error_msg(msg) 
     if int_mode then
@@ -44,10 +48,10 @@ local function eval(token)
         push(token.value)
     elseif token.type == "NAME" then
         if NAMES[token.value] ~= nil then
-            -- print("EXECUTING: " .. token.value)
+            if DEBUG_MODE then print("DEFINING: " .. token.value) end
             NAMES[token.value]()
         else
-	    error_msg("Function not found: " .. token.value)
+	    error_msg("NAME not found: " .. token.value)
 	    return
         end
     elseif token.type == "EXPR" then
@@ -57,6 +61,7 @@ end
 
 function process(tokens)
     for _, token in ipairs(tokens) do
+	if EXIT then return end
         eval(token)
     end
 end
@@ -70,58 +75,38 @@ local function def()
     local body = pop()
     local name = pop()
     NAMES[name] = function() run(body) end
-    if int_mode then
-        print("Tsumu: function "..name.." defined.")
+    if INT_MODE then
+        print("Tsumu: name "..name.." defined.")
     end
 end
 
--- Operações disponíveis
-NAMES["def"] = def
-NAMES["pop"] = pop
-NAMES["+"] = function() push(pop() + pop()) end
-NAMES["*"] = function() push(pop() * pop()) end
-NAMES["/"] = function() push(pop() / pop()) end
-NAMES["%"] = function() local b = pop() push(pop() % b) end
-NAMES["-"] = function() local b = pop() push(pop()-b) end
-NAMES["="] = function() 
-    if pop() == pop() then 
-        push(1) 
-    else 
-        push(0) 
-    end
+local function eq () 
+    if pop() == pop() then push(1) else push(0) end
 end
-NAMES[">"] = function()
+
+local function gt ()
     local a = pop()
     local b = pop()
-    if b > a then 
-        push(1) 
-    else 
-        push(0) 
-    end
+    if b > a then push(1) else push(0) end
 end
-NAMES["<"] = function()
+
+local function lt()
     local a = pop()
     local b = pop()
-    if b < a then 
-        push(1) 
-    else 
-        push(0) 
-    end
+    if b < a then push(1) else push(0) end
 end
-NAMES["not"] = function()
+
+local function _not()
 	if pop ~= 0 then push(0) else push(1) end
 end
-NAMES["len"] = function() push(#STACK) end
-NAMES["io-write"] = function() io.write(pop()) end
-NAMES["import"] = function() import(pop()) end
-NAMES["os-execute"] = function()
-    local handle = io.popen(pop())
-    local result = handle:read("*a")
-    handle:close()
-    push(trim(result))
+
+local function len() push(#STACK) end
+
+local function number()
+    if tonumber(pop()) ~= nil then push(1) else push(0) end
 end
-NAMES["eval"] = function() run(pop()) end
-NAMES["pick"] = function()
+
+local function pick()
     local len = pop()
     if len > #STACK then
         error_msg("PICK: STACK UNDERFLOW")
@@ -132,54 +117,151 @@ NAMES["pick"] = function()
         table.insert(STACK, a)
     end
 end
-NAMES["if"] = function()
-    local body = pop()
-    local cond = pop()
-    if cond == 1 then run(body) end
+
+local function cond()
+   local f = pop()
+   local t = pop()
+   local cond = pop()
+   if cond > 0 then push(t) else push(f) end
 end
-NAMES["ifelse"] = function()
-    local else_ = pop()
-    local then_ = pop()
-    local cond = pop()
-    if cond == 1 then run(then_) else run(else_) end
+
+local function swap()
+   local a = pop()
+   local b = pop()
+   push(b) push(a)
 end
-NAMES["while"] = function()
+
+local function compose()
+   local a = pop()
+   local b = pop()
+   push(b.." "..a)
+end
+
+local function _while()
     local body = pop()
     local cond = pop()
     while true do
+        TOTAL_LOOP = TOTAL_LOOP + 1
+        if TOTAL_LOOP >= MAX_LOOP then 
+            error_msg("You reached the maximum loop quantity allowed")
+            break
+        end
         run(cond)
         if pop() ~= 1 then break end
         run(body)
     end
+    TOTAL_LOOP = 0
 end
-NAMES["->"] = function() table.insert(STASH, pop()) end
-NAMES["<-"] = function() local a = table.remove(STASH) push(a) end
-NAMES["print-stack"] = function()
+
+local function rot()
+    local last = table.remove(STACK)
+    table.insert(STACK, 1, last)
+end
+
+local function _rot()
+    local first = table.remove(STACK,1)
+    table.insert(STACK, first)
+end
+
+local function max_loop_def()
+   local a = pop()
+   if tonumber(a) then MAX_LOOP = a end
+end
+
+local function stash_in()  table.insert(STASH, pop()) end
+local function stash_out() local a = table.remove(STASH) push(a) end
+
+local function _eval()
+    local expr = pop()
+    run(expr)
+end
+
+local function emit()
+    local a = pop()
+    io.write(string.char(a))
+end
+
+local function ps()
     for _,i in pairs(STACK) do
         io.write("["..i.."]")
     end
     io.write("\n")
 end
-NAMES["clear"] = function() STACK = {} end
-NAMES["print"] = function()
+
+local function _import()
+    local a = tostring(pop())
+    if a then
+        import(a)
+    end
+end
+
+local function _print()
     if #STACK == 0 then
         error_msg("PRINT: STACK UNDERFLOW")
         return
     end
     print(pop())
 end
-NAMES["rot"] = function()
-    local last = table.remove(STACK)
-    table.insert(STACK, 1, last)
+
+local function exit()
+   EXIT = true
 end
-NAMES["-rot"] = function()
-    local first = table.remove(STACK,1)
-    table.insert(STACK, first)
+
+local function os_execute()
+    local handle = io.popen(pop())
+    local result = handle:read("*a")
+    handle:close()
+    push(trim(result))
 end
+
+-- Operações disponíveis
+NAMES["def"] = def
+NAMES["pop"] = pop
+NAMES["+"] = function()
+        local a = pop()
+        local b = pop()
+        push(a + b)
+    end
+NAMES["*"] = function() push(pop() * pop()) end
+NAMES["/"] = function() push(pop() / pop()) end
+NAMES["%"] = function() local b = pop() push(pop() % b) end
+NAMES["-"] = function()
+        local a = pop()
+        local b = pop()
+        push(b-a)
+    end
+NAMES["="] = eq
+NAMES[">"] = gt
+NAMES["<"] = lt
+NAMES["not"] = _not
+NAMES["len"] = len
+NAMES["number?"] = number
+NAMES["eval"] = _eval
+NAMES["pick"] = pick
+NAMES["cond"] = cond
+NAMES["while"] = _while
+NAMES["compose"] = compose
+NAMES["stash>"] = stash_in
+NAMES["<stash"] = stash_out
+NAMES["rot"] = rot
+NAMES["-rot"] = _rot
+NAMES["io-write"] = function() io.write(pop()) end
+NAMES["io-read"] = function() push(io.read()) end
+NAMES["emit"] = emit
+NAMES["import"] = _import
+NAMES["trim"] = import
+NAMES["debug-mode"] = function() DEBUG_MODE = true end
+NAMES["max-loop-def"] = max_loop_def
+NAMES["print"] = _print
+NAMES["ps"] = ps
+NAMES["exit"] = exit
+NAMES["error-msg"] = function() error_msg(pop()) end
+NAMES["os-execute"] = os_execute
+NAMES["int-mode"] = function() INT_MODE = true end
 
 -- Strings
 local function reverse_array(arr)
-    rev = {}
+    local rev = {}
     for i=#arr, 1, -1 do
         rev[#rev+1] = arr[i]
     end
@@ -197,13 +279,14 @@ NAMES["split"] = function()
     for _,u in pairs(reverse_array(str_table)) do
         push(u)
     end
-
 end
 NAMES["concat"] = function()
-    local b = pop()
-    push(b .. pop())
+    local b = tostring(pop())
+    push(b .. tostring(pop()))
 end
-
+NAMES["string?"] = function()
+    if tonumber(pop()) == nil then push(1) else push(0) end
+end
 
 ---@param filename string
 function import(filename)
@@ -234,27 +317,11 @@ function import(filename)
     run(code)
 end
 
-if arg[1] == nil then
-    int_mode = true
-    local welcome = "Tsumu: Interactive mode (ctrl+c or 'exit' to quit)"
-    print(welcome)
-    while true do
-        io.write("> ")
-        local input = io.read("*line")
-        if input then
-            if trim(input) == "cls" then
-                os.execute("clear")
-                print(welcome)
-            elseif trim(input) == "exit" then
-                print("Tsumu: See you soon!") break
-            elseif input ~= "" then run(input) end
-        end
-    end
-else
+if (arg[1] ~= nil) then
     local filename = table.remove(arg,1)
     for i, u in ipairs(arg) do
-        push(u)
+	push(u)
     end
-    import(filename)
 end
+import("cli.tsu")
 
