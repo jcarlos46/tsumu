@@ -1,0 +1,3 @@
+"stdlib" import
+
+150 (dup 0 >) (1 -) while

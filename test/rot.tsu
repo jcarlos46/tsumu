@@ -1,0 +1,5 @@
+-- rot.tsu
+"stdlib" import
+
+1 2 3 rol ps clear
+1 2 3 -rol ps

@@ -1,0 +1,18 @@
+"stdlib" import
+
+(data-size)    4 def
+(program-size) 5 def
+
+(x)(x)(x)(x)(x)(x)
+-- program 6
+(1)(2)(3)(4)
+-- data    4
+(h)(h)(h)(h)(h)(h)
+-- heap    5
+
+
+-- ( index -- value )
+(data-pick)
+  (len swap - program-size - 3 - pick) def
+
+0 3 (-> dup data-pick print <-) loop

@@ -1,7 +1,7 @@
 "stdlib" import
 
-1 2 1 cond print
+1 2 1 cond print clear
 
-(if) (cond apply) def
+0 (1) (2) if print
 
-0 ("FOO" print) () if
+1 (2) when print

@@ -1,0 +1,30 @@
+"stdlib" import
+
+-- ( n -- n' )
+(gen-rnd) (25 random) def
+
+-- ( seq.. len -- n )
+(n-concat)
+  ((dup 1 >) ((" " concat swap concat) dip 1 - ) while pop)
+def
+
+-- ( haystack needle -- haystack true-false )
+(contains?) (
+  (len n-concat) dip
+  dupd swap
+  (apply ps) dip
+) def
+
+6 (dup 0 >) (gen-rnd swap 1 -) while pop
+
+6 contains? ps exit
+    
+(dup apply (=) map) dip
+
+len 2 / n-concat
+
+((len 1 >) (or) while) dip
+
+len 1 - n-concat swap 
+
+ps

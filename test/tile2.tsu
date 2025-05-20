@@ -1,0 +1,21 @@
+"stdlib" import
+
+(side)            6 def
+(area)  side side * def
+(tiles)    side 1 + def
+
+-- ( n -- )
+(render) (("#") (".") ifelse io-write) def
+
+-- defining random positions
+(len tiles <) (
+  area random
+  dup contains? 1 > (pop) if
+) while
+
+-- rendering
+area (dup 0 >) (
+  dup (contains? render) dip
+  -- new line 
+  dup 1 - side % not (" " print) if
+1 -) while pop 

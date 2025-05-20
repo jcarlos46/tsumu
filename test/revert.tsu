@@ -1,0 +1,9 @@
+-- revert.tsu
+-- debug-mode
+"stdlib" import
+
+9 8 7 6 5 4 3 2 1 revert
+-- 3 2 1 ps
+-- len 2 - dup rot (dup 0 >) (swap -> 1 -) while pop
+-- swap -rot (dup 0 >) (<- swap 1 - -> rot <-) while pop
+ps

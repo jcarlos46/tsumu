@@ -1,4 +1,4 @@
-"stdlib.tsu" import
-
 1 2 3 (2 +) map ps
--- 3 4 5
+
+-- 1 2 3 (2 +) len 1 -
+
