@@ -200,10 +200,32 @@ end
 
 local function os_execute()
     local handle = io.popen(tostring(pop()))
+    print(handle)
     if handle ~= nil then
         local result = handle:read("*a")
         push(trim(result))
         handle:close()
+    end
+end
+
+local function contains()
+   local value = pop()
+   local qnt = 0
+    for _, v in pairs(STACK) do
+        if v == value then
+	   qnt = qnt + 1
+        end
+    end
+    return push(qnt)
+end
+
+local function _trim()
+   local a = pop()
+   a = trim(a)
+   if tonumber(a) then
+      push(tonumber(a))
+    else
+      push(tostring(a))
     end
 end
 
@@ -216,7 +238,11 @@ NAMES["+"] = function()
         push(a + b)
     end
 NAMES["*"] = function() push(pop() * pop()) end
-NAMES["/"] = function() push(pop() / pop()) end
+NAMES["/"] = function()
+   local a = pop ()
+   local b = pop ()
+   push(b / a)
+end
 NAMES["%"] = function() local b = pop() push(pop() % b) end
 NAMES["-"] = function()
         local a = pop()
@@ -237,20 +263,32 @@ NAMES["compose"] = compose
 NAMES["swap"] = swap
 NAMES["stash>"] = stash_in
 NAMES["<stash"] = stash_out
+NAMES["contains?"] = contains
 NAMES["io-write"] = function() io.write(pop()) end
 NAMES["io-read"] = function() push(io.read()) end
 NAMES["emit"] = emit
 NAMES["import"] = _import
-NAMES["trim"] = import
+NAMES["trim"] = _trim
 NAMES["debug-mode"] = function() DEBUG_MODE = true end
 NAMES["max-loop-def"] = max_loop_def
 NAMES["print"] = _print
 NAMES["ps"] = ps
 NAMES["exit"] = exit
 NAMES["error-msg"] = function() error_msg(pop()) end
-NAMES["os-execute"] = os_execute
+NAMES["os-execute"] = function() os.execute() end
+NAMES["random"] = function()
+   math.randomseed(os.time() + os.clock() * 1000000)
+   push(math.random(pop()))
+end
 NAMES["int-mode"] = function() INT_MODE = true end
-
+NAMES["rot"] = function()
+    local last = table.remove(STACK)
+    table.insert(STACK, 1, last)
+end
+NAMES["-rot"] = function()
+    local first = table.remove(STACK,1)
+    table.insert(STACK, first)
+end
 -- Strings
 local function reverse_array(arr)
     local rev = {}

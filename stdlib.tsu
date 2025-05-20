@@ -3,27 +3,29 @@
 -- DUPLICAÇÃO E MANIPULAÇÃO DE PILHA
 (dup)   (0 pick)       def
 (2dup)  (dup dup)      def
-(over)  (1 pick)       def
+(over)  (dupd swap)    def
 (2over) (over over)    def
 (2rot)  (rot rot)      def
 (2pop)  (pop pop)      def
 
-(swap)  (dup 2 pick -> -> pop pop <- <-) def
-
 -- OPERAÇÕES LÓGICAS
-(eq)   (=)           def
-(not)  (0 =)         def
-(!=)   (= not)       def
-(and)  (* not not)   def
-(or)   (+ not not)   def
-(xor)  (= not)       def
-(if)   (cond apply)  def
+(eq)   (=)         def
+(not)  (0 =)       def
+(!=)   (= not)     def
+(and)  (* not not) def
+(or)   (+ not not) def
+(xor)  (= not)     def
 
--- Operações Padrões
+-- Condicionais
+(if)   (cond apply) def
+(when) (() if)  def
+
+-- Operações Padrão
 (dip)  (swap compose call) def
-(dipd) (swap dip) def
-(rol) (swap (swap) dip) def
-(-rol) ((swap) dip swap) def
+(dipd) (swap (dip) dip)    def
+(dupd) ((dup) dip)         def
+(rol)  (swap (swap) dip)   def
+(-rol) ((swap) dip swap)   def
 
 -- Eval alias ( expr -- expr-return... )
 (call)  (eval) def
@@ -33,7 +35,7 @@
 (printf) ((dup 0 >) (swap emit 1 - ) while) def
 
 -- Factorial (n -- n')
-(fact) (dup 1 > (dup 1 - fact *) (pop 1) ifelse) def
+(fact) (dup 1 > (dup 1 - fact *) (pop 1) if) def
 (!) (fact) def
 -- 5 !  print  -- 120
 
@@ -45,11 +47,11 @@
 
 
 -- Max (a b -- n)
-(max) (2over > (pop) (swap pop) ifelse) def
+(max) (2over > (pop) (swap pop) if) def
 -- 11 10 max ps  -- [11]
 
 -- Min (a b -- n)
-(min) (2over < (pop) (swap pop) ifelse) def
+(min) (2over < (pop) (swap pop) if) def
 -- 11 10 min ps  -- [10]
 
 -- Absolute (n -- n')
@@ -98,20 +100,10 @@ def
 def
 
 -- Clean all main stack -- ( seq -- )
-(clear) (len 1 (-> -> pop <- <-) loop) def
+(clear) ((len 0 >) (pop) while) def
 
 -- Variable definiiton -- (value name -- )
 (var) (swap def) def
-
--- Loop -- ( start until body -- )
-(loop) (*loop-pick > (*loop-down) (*loop-up) ifelse 2pop pop) def
-(*loop-up)
-    ((*loop-pick 1 + <) (dup -> call -> 1 + <- <-) while)
-def
-(*loop-down)
-    ((*loop-pick 1 - >) (dup -> call -> -> 1 - <- <-) while)
-def
-(*loop-pick) (2 pick 2 pick) def
 
 -- Stash
 -- Stash manipulation aliases
