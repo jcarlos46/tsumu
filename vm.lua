@@ -3,6 +3,7 @@ local M = {}
 
 M.STACK = {}
 STASH = {}
+LISTS = {}
 M.NAMES = {}
 M.MAX_LOOP = 128
 M.TOTAL_LOOP = 0
@@ -24,6 +25,10 @@ end
 
 function M.build_string(value)
     return M.build_token("STRING", tostring(value))
+end
+
+function M.build_list(value)
+    return M.build_token("LIST", value)
 end
 
 function M.error_msg(msg) 
@@ -186,7 +191,14 @@ end
 
 local function ps()
     for _,i in pairs(M.STACK) do
-        io.write("["..i.value.."]")
+        if i.type == "LIST" then local str = ""
+            for _,u in pairs(i.value) do
+                str = str .. u.value .. " "
+            end
+            io.write("["..string.sub(str,1,-2).."]")
+        else
+            io.write("["..i.value.."]")
+        end
     end
     io.write("\n")
 end
@@ -220,6 +232,13 @@ local function _trim()
         local val = trim(a.value)
         M.push(M.build_string(val))
     end
+end
+
+local function list()
+   local a = M.pop()
+   if not M.expr_check(a.type, "LIST") then return end
+   table.insert(LISTS, {a,b})
+   M.push(M.build_list(#LISTS))
 end
 
 -- Operações disponíveis
@@ -286,6 +305,7 @@ M.NAMES["compose"] = compose
 M.NAMES["swap"] = swap
 M.NAMES["stash>"] = stash_in
 M.NAMES["<stash"] = stash_out
+M.NAMES["list"] = list
 M.NAMES["contains?"] = contains
 M.NAMES["io-write"] = function() io.write(M.pop().value) end
 M.NAMES["io-read"] = function() M.push(M.build_string(io.read())) end
@@ -320,7 +340,7 @@ M.NAMES["concat"] = function()
     local b = M.pop()
     local a_value = a.value
     local b_value = b.value
-    local val = M.build_string(b.." "..a)
+    local val = M.build_string(b_value.." "..a_value)
     M.push(val)
 end
 M.NAMES["string?"] = function()

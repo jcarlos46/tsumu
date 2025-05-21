@@ -50,6 +50,27 @@ function M.tokenize(input)
                     end
                     table.insert(result, return_token("EXPR", expr))
 
+                elseif c == "[" then
+                    -- Lista entre colchetes
+                    local list = ""
+                    local depth = 1
+                    i = i + 1
+                    while i <= #line and depth > 0 do
+                        local ch = line:sub(i, i)
+                        if ch == "[" then
+                            depth = depth + 1
+                        elseif ch == "]" then
+                            depth = depth - 1
+                            if depth == 0 then
+                                i = i + 1
+                                break
+                            end
+                        end
+                        list = list .. ch
+                        i = i + 1
+                    end
+                    table.insert(result, M.parse_list(return_token("LIST", list)))
+
                 elseif c == "\"" then
                     -- String entre aspas
                     local str = ""
@@ -81,7 +102,7 @@ function M.tokenize(input)
                 else
                     -- Token padrão (número ou nome)
                     local token = ""
-                    while i <= #line and not line:sub(i, i):match("[%s%(%)\"]") do
+                    while i <= #line and not line:sub(i, i):match("[%s%(%)%[%]\"]") do
                         token = token .. line:sub(i, i)
                         i = i + 1
                     end
@@ -99,6 +120,65 @@ function M.tokenize(input)
 
     return result
 end
+
+function M.parse_list(token)
+    assert(token.type == "LIST", "Token precisa ser do tipo LIST")
+
+    local content = token.value
+    local result = {}
+
+    local i = 1
+    while i <= #content do
+        local c = content:sub(i, i)
+
+        if c:match("%s") then
+            i = i + 1 -- Ignora espaços
+
+        elseif c == "\"" then
+            -- String
+            local str = ""
+            i = i + 1
+            while i <= #content do
+                local ch = content:sub(i, i)
+                if ch == "\"" then
+                    i = i + 1
+                    break
+                elseif ch == "\\" and i < #content then
+                    local next_ch = content:sub(i + 1, i + 1)
+                    if next_ch == "\"" or next_ch == "\\" then
+                        str = str .. next_ch
+                        i = i + 2
+                    else
+                        str = str .. ch
+                        i = i + 1
+                    end
+                else
+                    str = str .. ch
+                    i = i + 1
+                end
+            end
+            table.insert(result, return_token("STRING", str))
+
+        else
+            -- Nome ou número
+            local token_str = ""
+            while i <= #content and not content:sub(i, i):match("[%s\"]") do
+                token_str = token_str .. content:sub(i, i)
+                i = i + 1
+            end
+            if is_number(token_str) then
+                table.insert(result, return_token("NUMBER", tonumber(token_str)))
+            elseif is_name(token_str) then
+                table.insert(result, return_token("NAME", token_str))
+            else
+                table.insert(result, return_token("UNKNOWN", token_str))
+            end
+        end
+    end
+
+    return { type = "LIST", value = result }
+end
+
 
 function M.dump(o)
    if type(o) == 'table' then

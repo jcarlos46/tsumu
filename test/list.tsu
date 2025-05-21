@@ -1,0 +1,2 @@
+[0 1 2] ps clear
+[0 "Olá, Mundo" (+ 1 2)] ps clear
