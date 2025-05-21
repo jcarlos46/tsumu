@@ -73,7 +73,7 @@ function M.tokenize(input)
                             i = i + 1
                         end
                     end
-                    table.insert(result, return_token("STRING", str))
+                    table.insert(result, return_token("STRING", tostring(str)))
 
                 elseif c:match("%s") then
                     i = i + 1 -- Ignorar espaços
@@ -86,9 +86,9 @@ function M.tokenize(input)
                         i = i + 1
                     end
                     if is_number(token) then
-                        table.insert(result, return_token("NUMBER", token))
+                        table.insert(result, return_token("NUMBER", tonumber(token)))
                     elseif is_name(token) then
-                        table.insert(result, return_token("NAME", token))
+                        table.insert(result, return_token("NAME", tostring(token)))
                     else
                         table.insert(result, return_token("UNKNOWN", token))
                     end

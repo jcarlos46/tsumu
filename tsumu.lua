@@ -10,20 +10,15 @@ local import
 
 local function eval(token)
     if token.value == "--" then return end
-    if token.type == "NUMBER" then
-        vm.push(tonumber(token.value))
-    elseif token.type == "STRING" then
-        vm.push(token.value)
-    elseif token.type == "NAME" then
+    if token.type == "NAME" then
         if vm.NAMES[token.value] ~= nil then
             if vm.DEBUG_MODE then print("DEFINING: " .. token.value) end
             vm.NAMES[token.value]()
         else
-	    vm.error_msg("NAME not found: " .. token.value)
-	    return
+            vm.error_msg("NAME not found: " .. token.value)
         end
-    elseif token.type == "EXPR" then
-        vm.push(token.value)
+    else
+        vm.push(token)
     end
 end
 
@@ -40,40 +35,46 @@ function run(code)
 end
 
 local function _import()
-    local a = tostring(vm.pop())
+    local a = vm.pop()
+    if not vm.string_check(a.type, "IMPORT") then return end
     if a then
-        import(a)
+        import(a.value)
     end
 end
 
 local function def()
     local body = vm.pop()
     local name = vm.pop()
-    vm.NAMES[name] = function() run(body) end
+    if not vm.expr_check(name.type, "DEF") then return end
+    vm.NAMES[name.value] = function() run(body.value) end
     if vm.INT_MODE then
-        print("Tsumu: name "..name.." defined.")
+        print("Tsumu: name "..name.value.." defined.")
     end
 end
 
 local function _while()
     local body = vm.pop()
+    if not vm.expr_check(body.type, "WHILE") then return end
+
     local cond = vm.pop()
+    if not vm.expr_check(body.type, "WHILE") then return end
+
     while true do
         vm.TOTAL_LOOP = vm.TOTAL_LOOP + 1
         if vm.TOTAL_LOOP >= vm.MAX_LOOP then 
             vm.error_msg("You reached the maximum loop quantity allowed")
             break
         end
-        run(cond)
-        if vm.pop() ~= 1 then break end
-        run(body)
+        run(cond.value)
+        if vm.pop().value ~= 1 then break end
+        run(body.value)
     end
     vm.TOTAL_LOOP = 0
 end
 
 local function _eval()
     local expr = vm.pop()
-    run(expr)
+    run(expr.value)
 end
 
 vm.NAMES["def"] = def
@@ -90,7 +91,7 @@ function import(filename)
     -- Abre o arquivo para leitura
     local file = io.open(filename, "r")
     if not file then
-        vm.error_msg("Não foi possível abrir o arquivo de entrada.")
+        vm.error_msg("Não foi possível abrir o arquivo de entrada: " .. filename)
 	return
     end
     local table_code = {}
@@ -111,8 +112,8 @@ function import(filename)
 end
 
 if (arg[1] ~= nil) then
-    for i, u in ipairs(arg) do
-        vm.push(u)
+    for _, u in ipairs(arg) do
+        vm.push(vm.build_string(u))
     end
 end
 
