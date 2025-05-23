@@ -18,10 +18,10 @@
 
 -- Condicionais
 (if)   (cond apply) def
-(when) (() if)  def
+(when) (() if)      def
 
 -- Operações Padrão
-(dip)  (swap compose call) def
+(dip)  (swap quote compose call) def
 (dipd) (swap (dip) dip)    def
 (dupd) ((dup) dip)         def
 (rol)  (swap (swap) dip)   def
@@ -68,37 +68,6 @@
 (mod) (%) def
 
 
--- Reduce -- ( seq expr -- n )
-(reduce) (len 1 - *reduce-body) def
-
--- Reduce-N -- ( seq lenght expr -- n )
-(reduce-n) (swap *reduce-body) def
-
--- Reduce body
-(*reduce-body)
-  ((dup 1 >) (-> dup -> call <- <- 1 -) while 2pop)
-def
-
--- Map -- ( seq expr -- seq' )
-(map) (len 1 - *map-body) def
--- Map body
-(*map-body)
-  ((dup 0 >) (-> dup -> call rot <- <- 1 -) while 2pop)
-def
-
--- Filter -- ( seq expr -- seq' )
-(filter)
-  (len 1 - (dup 0 >)
-    (-> dup -> over swap call (rot) (pop) ifelse <- <- 1 -)
-  while 2pop)
-def
-
--- Revert -- ( seq -- seq' )
-(revert)
-  (len 2 - dup rot (dup 0 >) (swap -> 1 -) while pop
-   swap -rot (dup 0 >) (<- rot 1 -) while pop)
-def
-
 -- Clean all main stack -- ( seq -- )
 (clear) ((len 0 >) (pop) while) def
 
@@ -110,3 +79,52 @@ def
 (->) (stash>) def
 (<-) (<stash) def
 
+-- List manipulation
+(list)
+  ([] (len 1 >) (cons) while)
+def
+
+(unlist)
+  ((size 0 >) (uncons) while pop)
+def
+
+(head)
+  (uncons dupd swap (cons) dip)
+def
+
+(tail) (uncons swap pop) def
+
+(reverse)
+  ([] swap
+    (size 0 >)
+      (uncons (swap cons) dip) while pop)
+def
+
+-- TODO: criar versões para STRING e EXPR
+(concat)
+  (swap reverse
+    (size 0 >)
+      (uncons (swap cons) dip) while pop)
+def
+
+(map)
+  (stash> [] swap
+    (size 0 >)
+      (uncons <stash dup stash> dip (swap cons) dip) while
+  <stash 2pop reverse)
+def
+
+(filter)
+  (stash> [] swap
+    (size 0 >)
+      (uncons dupd <stash dup stash> dip 
+        swap (swap cons) (pop) cond dip) while
+  <stash 2pop reverse)
+def
+
+(fold)
+  (stash> uncons
+    (size 0 >)
+      (uncons <stash dup stash> dip) while
+  <stash 2pop)
+def

@@ -1,2 +1,40 @@
 [0 1 2] ps clear
 [0 "Olá, Mundo" (+ 1 2)] ps clear
+
+1 [2 3] cons ps clear
+-- [1 2 3]
+
+[1 2 3] uncons ps clear
+-- [1][2 3]
+
+1 2 3 list ps clear
+-- [1 2 3]
+
+[1 2 3] head ps clear
+-- [1 2 3][1]
+
+[1 2 3] tail ps clear
+-- [2 3]
+
+[0 1 2] size ps clear
+-- [0 1 2][3]
+
+[0 1 2] unlist ps clear
+-- [0][1][2]
+
+[0 1 2] reverse ps clear
+-- [2 1 0]
+
+[0 1 2] [3 4 5] concat ps clear
+-- [0 1 2 3 4 5]
+
+[[1][1]] ps clear
+
+[2 3 4] (dup *) map ps clear
+-- [4 9 16]
+
+[0 1 2 3 4 5] (even?) filter ps clear
+-- [0 2 4]
+
+[1 2 3] (+) fold ps clear
+-- 6
