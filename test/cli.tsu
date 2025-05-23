@@ -8,15 +8,15 @@ def
 
 len 0 > (import) ((running-cli) 1 def) if
 
-running-cli (int-mode welcome-msg) () if
+running-cli (int-mode welcome-msg) when
 
 (running-cli) (
   "> " io-write
   io-read
 
-  dup trim "" = () (
+  dup trim "" = not (
     dup trim "cls"  = ("clear" os-execute welcome-msg) () if
     dup trim "exit" = ("See you soon!" print exit) () if
     2dup trim "cls" != swap "exit" != and (apply) () if
-  ) if
+  ) when
 ) while

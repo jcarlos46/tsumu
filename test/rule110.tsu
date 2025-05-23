@@ -1,0 +1,70 @@
+-- rule110.tsu
+(print-line)
+  ((size 0 >)
+    (uncons swap 
+	 "#" "." cond io-write) while "" print pop)
+def
+
+(3cons) (cons cons cons) def
+(3uncons) (uncons uncons uncons) def
+
+(unfold)
+  ((size 2 >)
+    (3uncons stash>
+     [] 3cons 
+     dup "" join
+     swap tail
+     <stash concat) 
+  while pop)
+def
+
+(fill-zero)
+  (len arr-size swap - 
+   (dup 0 >) (0 swap 1 -) while pop)
+def
+
+-- ( list -- list' )
+(next-gen-110)
+  (unfold list
+   (size 0 >)
+      (uncons swap
+       dup "000" = (0 swap) when
+       dup "001" = (1 swap) when
+       dup "010" = (1 swap) when
+       dup "011" = (1 swap) when
+       dup "100" = (0 swap) when
+       dup "101" = (1 swap) when
+       dup "110" = (1 swap) when
+       dup "111" = (0 swap) when 
+       pop swap)
+   while pop
+fill-zero list)
+def
+
+-- ( list -- list' )
+(next-gen-30)
+  (unfold list
+   (size 0 >)
+      (uncons swap
+       dup "000" = (0 swap) when
+       dup "001" = (1 swap) when
+       dup "010" = (1 swap) when
+       dup "011" = (1 swap) when
+       dup "100" = (1 swap) when
+       dup "101" = (0 swap) when
+       dup "110" = (0 swap) when
+       dup "111" = (0 swap) when 
+       pop swap)
+   while pop
+fill-zero list)
+def
+
+-- main
+"000000001" char
+(to-number) map
+
+size (arr-size) var
+
+(dup (+) fold 0 >)
+  (dup print-line next-gen-110)
+while

@@ -3,7 +3,6 @@ local M = {}
 
 M.STACK = {}
 STASH = {}
-LISTS = {}
 M.NAMES = {}
 M.MAX_LOOP = 128
 M.TOTAL_LOOP = 0
@@ -149,7 +148,7 @@ local function pick()
         return
     end
     local i = #M.STACK - len.value
-    local a = M.STACK[i]
+    local a = deep_copy(M.STACK[i])
     table.insert(M.STACK, a)
 end
 
@@ -205,16 +204,24 @@ local function emit()
     io.write(string.char(a.value))
 end
 
-local function ps()
-    for _,i in pairs(M.STACK) do
-        if i.type == "LIST" then
-            local str = ""
-            for _,u in pairs(i.value) do
-                str = str .. u.value .. " "
-            end
-            io.write("["..string.sub(str,1,-2).."]")
+local function ps_list(list)
+    local str = ""
+    for _, u in ipairs(list) do
+        if u.type == "LIST" then
+            str = str .. ps_list(u.value) .. " "
         else
-            io.write("["..i.value.."]")
+            str = str .. tostring(u.value) .. " "
+        end
+    end
+    return "[" .. (str:sub(1, -2)) .. "]"
+end
+
+local function ps()
+    for _, i in ipairs(M.STACK) do
+        if i.type == "LIST" then
+            io.write(ps_list(i.value))
+        else
+            io.write("[" .. tostring(i.value) .. "]")
         end
     end
     io.write("\n")
@@ -236,8 +243,8 @@ local function contains()
     local needle = M.pop()
     local haystask = M.pop()
 
-    assert(needle.type == "STRING", "JOIN: STRING expected, but got "..needle.type)
-    assert(haystask.type == "LIST", "JOIN: LIST expected, but got "..haystask.type)
+    assert(needle.type == "STRING", "CONTAINS: STRING expected, but got "..needle.type)
+    assert(haystask.type == "LIST", "CONTAINS: LIST expected, but got "..haystask.type)
 
     local qnt = 0
     for _, v in pairs(haystask.value) do
@@ -260,6 +267,22 @@ end
 local function which_type()
     local a = M.pop()
     M.push(M.build_string(a.type))
+end
+
+function deep_copy(orig, copies)
+    copies = copies or {}
+    if type(orig) ~= 'table' then
+        return orig
+    elseif copies[orig] then
+        return copies[orig]  -- evita loops em tabelas auto-referenciadas
+    end
+
+    local copy = {}
+    copies[orig] = copy
+    for k, v in pairs(orig) do
+        copy[deep_copy(k, copies)] = deep_copy(v, copies)
+    end
+    return setmetatable(copy, getmetatable(orig))
 end
 
 -- Operações disponíveis
@@ -329,7 +352,9 @@ M.NAMES["stash>"] = stash_in
 M.NAMES["<stash"] = stash_out
 M.NAMES["contains?"] = contains
 M.NAMES["type?"] = which_type
-M.NAMES["io-write"] = function() io.write(M.pop().value) end
+M.NAMES["io-write"] = function() 
+    io.write(M.pop().value) 
+end
 M.NAMES["io-read"] = function() M.push(M.build_string(io.read())) end
 M.NAMES["emit"] = emit
 M.NAMES["trim"] = _trim
@@ -367,14 +392,14 @@ end
 
 local function uncons()
     local b = M.pop()
-    assert(b.type == "LIST", "CONS: LIST expected, but got "..b.type)
+    assert(b.type == "LIST", "UNCONS: LIST expected, but got "..b.type)
     local a = table.remove(b.value, 1)
     M.push(a) M.push(b)
 end
 
 local function size()
     local a = M.pop()
-    assert(a.type == "LIST", "CONS: LIST expected, but got "..a.type)
+    assert(a.type == "LIST", "SIZE: LIST expected, but got "..a.type)
     local b = #a.value
     M.push(a) M.push(M.build_number(b))
 end
@@ -422,7 +447,7 @@ end
 local function words()
     local str = M.pop()
 
-    assert(str.type == "STRING", "CHAR: STRING expected, but got "..str.type)
+    assert(str.type == "STRING", "WORDS: STRING expected, but got "..str.type)
 
     local result = {}
     for i = 1, #str do
@@ -486,5 +511,18 @@ local function read_file()
 end
 
 M.NAMES["read-file"] = read_file
+
+local function to_number()
+    local str = M.pop()
+    assert(str.type == "STRING" or str.type == "NUMBER", "TO-NUMBER: STRING expected, but got "..str.type)
+    local num = tonumber(str.value)
+    if num then
+        M.push(M.build_number(num))
+    else
+        M.error_msg("TO-NUMBER: Invalid number format")
+    end
+end
+
+M.NAMES["to-number"] = to_number
 
 return M
