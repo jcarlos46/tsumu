@@ -168,11 +168,27 @@ local function swap()
    M.push(b)
 end
 
+local function quote()
+    local a = M.pop()
+    if a.type == "NUMBER" or a.type == "EXPR" then
+        M.push(M.build_string(tostring(a.value)))
+    elseif a.type == "LIST" then
+        local str = ""
+        for _,u in pairs(a.value) do
+                str = str .. u.value .. " "
+        end
+        str = "["..string.sub(str,1,-2).."]"
+        M.push(M.build_string(str))
+    else
+        M.push(a)
+    end
+end
+
 local function compose()
    local a = M.pop()
    local b = M.pop()
    
-   M.push(M.build_expr(b.." "..a))
+   M.push(M.build_expr(b.value.." "..a.value))
 end
 
 local function max_loop_def()
@@ -227,18 +243,16 @@ local function contains()
 end
 
 local function _trim()
-   local a = M.pop()
-   if a.type == "STRING" then
+    local a = M.pop()
+    if a.type == "STRING" then
         local val = trim(a.value)
         M.push(M.build_string(val))
     end
 end
 
-local function list()
-   local a = M.pop()
-   if not M.expr_check(a.type, "LIST") then return end
-   table.insert(LISTS, {a,b})
-   M.push(M.build_list(#LISTS))
+local function which_type()
+    local a = M.pop()
+    M.push(M.build_string(a.type))
 end
 
 -- Operações disponíveis
@@ -301,12 +315,14 @@ M.NAMES["len"] = len
 M.NAMES["number?"] = number
 M.NAMES["pick"] = pick
 M.NAMES["cond"] = cond
+M.NAMES["quote"] = quote
 M.NAMES["compose"] = compose
 M.NAMES["swap"] = swap
 M.NAMES["stash>"] = stash_in
 M.NAMES["<stash"] = stash_out
 M.NAMES["list"] = list
 M.NAMES["contains?"] = contains
+M.NAMES["type?"] = which_type
 M.NAMES["io-write"] = function() io.write(M.pop().value) end
 M.NAMES["io-read"] = function() M.push(M.build_string(io.read())) end
 M.NAMES["emit"] = emit
@@ -334,21 +350,31 @@ M.NAMES["-rot"] = function()
     local first = table.remove(M.STACK,1)
     table.insert(M.STACK, first)
 end
--- Strings
-M.NAMES["concat"] = function()
-    local a = M.pop()
+
+local function cons()
     local b = M.pop()
-    local a_value = a.value
-    local b_value = b.value
-    local val = M.build_string(b_value.." "..a_value)
-    M.push(val)
+    assert(b.type == "LIST", "CONS: LIST expected, but got "..b.type)
+    local a = M.pop()
+    table.insert(b.value, 1, a)
+    M.push(b)
 end
-M.NAMES["string?"] = function()
-    if M.pop().value then
-        M.push(M.build_numer(1))
-    else
-        M.push(M.build_numer(0))
-    end
+
+local function uncons()
+    local b = M.pop()
+    assert(b.type == "LIST", "CONS: LIST expected, but got "..b.type)
+    local a = table.remove(b.value, 1)
+    M.push(a) M.push(b)
 end
+
+local function size()
+    local a = M.pop()
+    assert(a.type == "LIST", "CONS: LIST expected, but got "..a.type)
+    local b = #a.value
+    M.push(a) M.push(M.build_number(b))
+end
+
+M.NAMES["cons"] = cons
+M.NAMES["uncons"] = uncons
+M.NAMES["size"] = size
 
 return M
