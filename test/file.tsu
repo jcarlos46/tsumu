@@ -1,0 +1,8 @@
+-- file.tsu
+
+-- "test/file.tsu" read-file
+-- lines unlist
+-- ps clear
+
+"wallpaper.jpg" read-file
+ps

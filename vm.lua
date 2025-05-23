@@ -207,7 +207,8 @@ end
 
 local function ps()
     for _,i in pairs(M.STACK) do
-        if i.type == "LIST" then local str = ""
+        if i.type == "LIST" then
+            local str = ""
             for _,u in pairs(i.value) do
                 str = str .. u.value .. " "
             end
@@ -232,13 +233,19 @@ local function exit()
 end
 
 local function contains()
-   local needle = M.pop()
-   local qnt = 0
-    for _, v in pairs(M.STACK) do
+    local needle = M.pop()
+    local haystask = M.pop()
+
+    assert(needle.type == "STRING", "JOIN: STRING expected, but got "..needle.type)
+    assert(haystask.type == "LIST", "JOIN: LIST expected, but got "..haystask.type)
+
+    local qnt = 0
+    for _, v in pairs(haystask.value) do
         if v.value == needle.value then
             qnt = qnt + 1
         end
     end
+
     return M.push(M.build_number(qnt))
 end
 
@@ -320,7 +327,6 @@ M.NAMES["compose"] = compose
 M.NAMES["swap"] = swap
 M.NAMES["stash>"] = stash_in
 M.NAMES["<stash"] = stash_out
-M.NAMES["list"] = list
 M.NAMES["contains?"] = contains
 M.NAMES["type?"] = which_type
 M.NAMES["io-write"] = function() io.write(M.pop().value) end
@@ -376,5 +382,109 @@ end
 M.NAMES["cons"] = cons
 M.NAMES["uncons"] = uncons
 M.NAMES["size"] = size
+
+local function split()
+    local sep = M.pop()
+    local str = M.pop()
+
+    assert(sep.type == "STRING", "SPLIT: STRING expected, but got "..sep.type)
+    assert(str.type == "STRING", "SPLIT: STRING expected, but got "..str.type)
+
+    local result = {}
+
+    if sep.value == "" then
+        -- Sem separador: divide por caractere
+        for i = 1, #str.value do
+            table.insert(result, M.build_string(str.value:sub(i, i)))
+        end
+    else
+        -- Com separador: divide por padrão
+        for part in string.gmatch(str.value, "([^" .. sep.value .. "]+)") do
+            table.insert(result, M.build_string(part))
+        end
+    end
+    M.push(M.build_list(result))
+end
+
+local function lines()
+    local str = M.pop()
+
+    assert(str.type == "STRING", "LINES: STRING expected, but got "..str.type)
+
+    local result = {}
+    for s in string.gmatch(str.value, "[^\r\n]+") do
+        table.insert(result, M.build_string(s))
+    end
+     
+    M.push(M.build_list(result))
+end
+
+local function words()
+    local str = M.pop()
+
+    assert(str.type == "STRING", "CHAR: STRING expected, but got "..str.type)
+
+    local result = {}
+    for i = 1, #str do
+        table.insert(result, M.build_string(str:sub(i, i)))
+    end
+    for word in string.gmatch(str.value, "%S+") do
+        table.insert(result, M.build_string(word))
+    end
+     
+    M.push(M.build_list(result))
+end
+
+local function char()
+    local str = M.pop()
+
+    assert(str.type == "STRING", "CHAR: STRING expected, but got "..str.type)
+
+    local result = {}
+    for i = 1, #str.value do
+        table.insert(result, M.build_string(str.value:sub(i, i)))
+    end
+     
+    M.push(M.build_list(result))
+end
+
+M.NAMES['lines'] = lines
+M.NAMES['words'] = words
+M.NAMES['char'] = char
+
+local function join()
+    local sep = M.pop()
+    local list = M.pop()
+
+    assert(sep.type == "STRING", "JOIN: STRING expected, but got "..sep.type)
+    assert(list.type == "LIST", "JOIN: LIST expected, but got "..list.type)
+
+    local tbl = {}
+    for _, value in pairs(list.value) do
+        table.insert(tbl, value.value)
+    end
+    local result = table.concat(tbl, sep.value)
+
+    M.push(M.build_string(result))
+end
+
+M.NAMES["split"] = split
+M.NAMES["join"] = join
+
+local function read_file()
+    local filepath = M.pop()
+    assert(filepath.type == "STRING", "READ-FILE: STRING expected, but got "..filepath.type)
+
+    local file = io.open(filepath.value, "r")  -- abre em modo leitura ("r")
+    if not file then
+        error("Não foi possível abrir o arquivo: " .. filepath.value)
+    end
+    local content = file:read("*a")  -- lê todo o conteúdo como string
+    file:close()
+--    M.push(M.build_string(escape_whitespace(content)))
+    M.push(M.build_string(content))
+end
+
+M.NAMES["read-file"] = read_file
 
 return M

@@ -1,0 +1,16 @@
+"1 2 3" " " split ps clear
+-- [1 2 3]
+
+[1 2 3] "," join print
+-- 1,2,3
+
+"1 2 3" words ps clear
+-- [1 2 3]
+
+"1
+2
+3" lines ps clear
+-- [1 2 3]
+
+"123" char ps clear
+-- [1 2 3]
