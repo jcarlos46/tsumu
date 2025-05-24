@@ -1,0 +1,35 @@
+{
+  "name": "tsumu",
+  "displayName": "Tsumu",
+  "description": "Support for the Tsumu programming language",
+  "version": "0.1.0",
+  "publisher": "your-name",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": ["Programming Languages", "Themes"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "tsumu",
+        "aliases": ["Tsumu", "tsumu"],
+        "extensions": [".tsu"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tsumu",
+        "scopeName": "source.tsumu",
+        "path": "./syntaxes/Tsumu.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "Tsumu Theme",
+        "uiTheme": "vs-dark",
+        "path": "./themes/Tsumu-color-theme.json"
+      }
+    ]
+  }
+}

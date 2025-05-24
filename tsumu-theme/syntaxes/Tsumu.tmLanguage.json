@@ -1,0 +1,41 @@
+{
+  "scopeName": "source.tsumu",
+  "name": "Tsumu",
+  "patterns": [
+    {
+      "match": "\\b(def|if|when|while|import|exit|print|clear|eval|call|apply|var|len|type\\?)\\b",
+      "name": "keyword.control.tsumu"
+    },
+    {
+      "match": "\\b(dup|swap|over|rot|2dup|2over|2rot|2pop|pick|stash>|<stash|cons|uncons|head|tail|reverse|concat|map|filter|fold)\\b",
+      "name": "support.function.stack.tsumu"
+    },
+    {
+      "match": "\\b(and|or|not|xor|=|!=|>|<|>=|<=|%)\\b",
+      "name": "keyword.operator.logical.tsumu"
+    },
+    {
+      "match": "\\b([0-9]+)\\b",
+      "name": "constant.numeric.tsumu"
+    },
+    {
+      "match": "\\\".*?\\\"",
+      "name": "string.quoted.double.tsumu"
+    },
+    {
+      "match": "\\[.*?\\]",
+      "name": "meta.brackets.list.tsumu"
+    },
+    {
+      "match": "\\(.*?\\)",
+      "name": "meta.brackets.expr.tsumu"
+    },
+    {
+      "match": "--.*$",
+      "name": "comment.line.double-dash.tsumu"
+    }
+  ],
+  "repository": {},
+  "fileTypes": ["tsu"],
+  "uuid": "b3e1c5e4-8f3c-4c3b-9b5f-1f7d9e5e6c3a"
+}
