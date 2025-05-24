@@ -1,0 +1,20 @@
+-- random.tsu
+
+os-time os-clock + 10000 *
+
+-- ( -- n )
+(random)
+  (os-time os-clock + 1000000 *
+   math-randomseed
+   math-random)
+def
+
+1024 max-loop-def
+1000 (dup 0 >)
+  (10 random pop 1 -)
+while pop
+
+os-time os-clock + 10000 *
+ps
+- abs io-write "ms" print 
+

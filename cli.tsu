@@ -10,13 +10,11 @@ len 0 > (import) ((running-cli) 1 def) if
 
 running-cli (int-mode welcome-msg) when
 
-(running-cli) (
-  "> " io-write
-  io-read
-
-  dup trim "" = not (
-    dup trim "cls"  = ("clear" os-execute welcome-msg) when
-    dup trim "exit" = ("Tsumu: See you soon!" print exit) when
-    2dup trim "cls" != swap "exit" != and (apply) when
-  ) when
-) while
+(running-cli)
+  ("> " io-write io-read
+   dup trim "" = not
+    (dup  trim "cls"  = ("clear" os-execute welcome-msg)    when
+     dup  trim "exit" = ("Tsumu: See you soon!" print exit) when
+     2dup trim "cls" != swap "exit" != and (apply)          when)
+    when)
+while

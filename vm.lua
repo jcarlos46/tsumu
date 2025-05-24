@@ -38,7 +38,7 @@ function M.error_msg(msg)
     end
 end
 
-function trim(s)
+function _G.trim(s)
   return s:match("^%s*(.-)%s*$")
 end
 
@@ -131,18 +131,6 @@ local function len()
     M.push(M.build_number(#M.STACK))
 end
 
-local function pick()
-    local len = M.pop()
-    if not number_check(len.type, "PICK") then return end
-    if len.value > #M.STACK then
-        M.error_msg("PICK: STACK UNDERFLOW")
-        return
-    end
-    local i = #M.STACK - len.value
-    local a = deep_copy(M.STACK[i])
-    table.insert(M.STACK, a)
-end
-
 local function cond()
    local f = M.pop()
    local t = M.pop()
@@ -182,8 +170,8 @@ end
 
 local function max_loop_def()
    local a = M.pop()
-   if not number_check(a.type, "MAX-LOOP-DEF") then return end
-   if tonumber(a) then M.MAX_LOOP = a end
+   assert(a.type == "NUMBER", "MAX-LOOP-DEF: NUMBER expected, but got "..a.type)
+   M.MAX_LOOP = a.value
 end
 
 local function stash_in()  table.insert(STASH, M.pop()) end
@@ -248,6 +236,19 @@ local function deep_copy(orig, copies)
     end
     return setmetatable(copy, getmetatable(orig))
 end
+
+local function pick()
+    local len = M.pop()
+    if not number_check(len.type, "PICK") then return end
+    if len.value > #M.STACK then
+        M.error_msg("PICK: STACK UNDERFLOW")
+        return
+    end
+    local i = #M.STACK - len.value
+    local a = deep_copy(M.STACK[i])
+    table.insert(M.STACK, a)
+end
+
 
 -- Operações disponíveis
 M.NAMES["pop"] = M.pop
@@ -314,19 +315,12 @@ M.NAMES["swap"] = swap
 M.NAMES["stash>"] = stash_in
 M.NAMES["<stash"] = stash_out
 M.NAMES["contains?"] = contains
-M.NAMES["debug-mode"] = function() M.DEBUG_MODE = true end
 M.NAMES["max-loop-def"] = max_loop_def
 M.NAMES["ps"] = ps
 M.NAMES["exit"] = exit
 M.NAMES["error-msg"] = function() M.error_msg(M.pop()) end
-M.NAMES["random"] = function()
-    local a = M.pop()
-    if not number_check(a.type, "RANDOM") then return end
-    math.randomseed(os.time() + os.clock() * 1000000)
-    local val = math.random(a.value)
-    M.push(M.build_number(val))
-end
 M.NAMES["int-mode"] = function() M.INT_MODE = true end
+M.NAMES["debug-mode"] = function() M.DEBUG_MODE = true end
 M.NAMES["rot"] = function()
     local last = table.remove(M.STACK)
     table.insert(M.STACK, 1, last)
@@ -410,7 +404,6 @@ local function words()
     for word in string.gmatch(str.value, "%S+") do
         table.insert(result, M.build_string(word))
     end
-     
     M.push(M.build_list(result))
 end
 
@@ -423,7 +416,6 @@ local function char()
     for i = 1, #str.value do
         table.insert(result, M.build_string(str.value:sub(i, i)))
     end
-     
     M.push(M.build_list(result))
 end
 
@@ -490,7 +482,8 @@ local function ffi()
             table.insert(args, value) -- Insere em ordem reversa para corresponder ao comportamento da pilha
         end
 
-        local result = resolved_func(table.unpack(args))
+        local unpack = table.unpack or unpack
+        local result = resolved_func(unpack(args))
         if return_type.value == "STRING" then
             M.push(M.build_string(tostring(result)))
         elseif return_type.value == "NUMBER" then

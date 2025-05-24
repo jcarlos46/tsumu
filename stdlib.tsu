@@ -95,8 +95,9 @@ def
 (map)
   (stash> [] swap
     (size 0 >)
-      (uncons <stash dup stash> dip (swap cons) dip) while
-  <stash 2pop reverse)
+      (uncons <stash dup stash> dip (swap cons) dip)
+    while
+   <stash 2pop reverse)
 def
 
 -- ( list expr -- list )
@@ -104,8 +105,9 @@ def
   (stash> [] swap
     (size 0 >)
       (uncons dupd <stash dup stash> dip 
-        swap (swap cons) (pop) cond dip) while
-  <stash 2pop reverse)
+       swap (swap cons) (pop) cond dip)
+    while
+   <stash 2pop reverse)
 def
 
 -- ( list expr -- n )
@@ -128,11 +130,16 @@ def
 -- IO
 "VOID"   1 "io.write" (io-write) ffi
 "STRING" 0 "io.read"  (io-read)  ffi
+-- OS
+"NUMBER" 0 "os.time" (os-time) ffi
+"NUMBER" 0 "os.clock" (os-clock) ffi
 -- MATH
 "NUMBER" 1 "math.abs" (abs) ffi
 "NUMBER" 2 "math.pow" (pow) ffi
 "NUMBER" 2 "math.min" (min) ffi
-"NUMBER" 2 "math.max" (abs) ffi
+"NUMBER" 2 "math.max" (max) ffi
+"VOID"   1 "math.randomseed" (math-randomseed) ffi
+"NUMBER" 1 "math.random" (math-random) ffi
 
 -- TODO: create C FFI
 -- Example:
