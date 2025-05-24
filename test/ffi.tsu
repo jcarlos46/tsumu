@@ -1,0 +1,21 @@
+-- ffi.tsu
+"NUMBER" 1 "math.rad" (rad) ffi
+"NUMBER" 1 "math.sin" (sin) ffi
+"NUMBER" 1 "math.cos" (cos) ffi
+"NUMBER" 1 "math.tan" (tan) ffi
+
+(angulo) 30 rad def
+
+angulo sin print
+angulo cos print
+angulo tan print
+
+"NUMBER" 1 "tonumber" (tonumber) ffi
+
+"1" type? print
+tonumber type? print
+
+clear
+
+"," [1 2 3] join type?
+ps clear

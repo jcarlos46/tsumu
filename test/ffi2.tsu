@@ -1,0 +1,4 @@
+-- ffi2.tsu
+
+"FOOBAR" io-write "" print
+io-read trim print

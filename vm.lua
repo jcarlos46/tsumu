@@ -38,7 +38,7 @@ function M.error_msg(msg)
     end
 end
 
-local function trim(s)
+function trim(s)
   return s:match("^%s*(.-)%s*$")
 end
 
@@ -131,15 +131,6 @@ local function len()
     M.push(M.build_number(#M.STACK))
 end
 
-local function number()
-    local a = M.pop()
-    if a.type == "NUMBER" then
-        M.push(M.build_number(1))
-    else
-        M.push(M.build_number(0))
-    end
-end
-
 local function pick()
     local len = M.pop()
     if not number_check(len.type, "PICK") then return end
@@ -186,7 +177,6 @@ end
 local function compose()
    local a = M.pop()
    local b = M.pop()
-   
    M.push(M.build_expr(b.value.." "..a.value))
 end
 
@@ -198,11 +188,6 @@ end
 
 local function stash_in()  table.insert(STASH, M.pop()) end
 local function stash_out() local a = table.remove(STASH) M.push(a) end
-
-local function emit()
-    local a = M.pop()
-    io.write(string.char(a.value))
-end
 
 local function ps_list(list)
     local str = ""
@@ -227,14 +212,6 @@ local function ps()
     io.write("\n")
 end
 
-local function _print()
-    if #M.STACK == 0 then
-        M.error_msg("PRINT: STACK UNDERFLOW")
-        return
-    end
-    print(M.pop().value)
-end
-
 local function exit()
    M.EXIT = true
 end
@@ -256,20 +233,7 @@ local function contains()
     return M.push(M.build_number(qnt))
 end
 
-local function _trim()
-    local a = M.pop()
-    if a.type == "STRING" then
-        local val = trim(a.value)
-        M.push(M.build_string(val))
-    end
-end
-
-local function which_type()
-    local a = M.pop()
-    M.push(M.build_string(a.type))
-end
-
-function deep_copy(orig, copies)
+local function deep_copy(orig, copies)
     copies = copies or {}
     if type(orig) ~= 'table' then
         return orig
@@ -342,7 +306,6 @@ M.NAMES[">"] = gt
 M.NAMES["<"] = lt
 M.NAMES["not"] = _not
 M.NAMES["len"] = len
-M.NAMES["number?"] = number
 M.NAMES["pick"] = pick
 M.NAMES["cond"] = cond
 M.NAMES["quote"] = quote
@@ -351,20 +314,11 @@ M.NAMES["swap"] = swap
 M.NAMES["stash>"] = stash_in
 M.NAMES["<stash"] = stash_out
 M.NAMES["contains?"] = contains
-M.NAMES["type?"] = which_type
-M.NAMES["io-write"] = function() 
-    io.write(M.pop().value) 
-end
-M.NAMES["io-read"] = function() M.push(M.build_string(io.read())) end
-M.NAMES["emit"] = emit
-M.NAMES["trim"] = _trim
 M.NAMES["debug-mode"] = function() M.DEBUG_MODE = true end
 M.NAMES["max-loop-def"] = max_loop_def
-M.NAMES["print"] = _print
 M.NAMES["ps"] = ps
 M.NAMES["exit"] = exit
 M.NAMES["error-msg"] = function() M.error_msg(M.pop()) end
-M.NAMES["os-execute"] = function() os.execute() end
 M.NAMES["random"] = function()
     local a = M.pop()
     if not number_check(a.type, "RANDOM") then return end
@@ -476,25 +430,7 @@ end
 M.NAMES['lines'] = lines
 M.NAMES['words'] = words
 M.NAMES['char'] = char
-
-local function join()
-    local sep = M.pop()
-    local list = M.pop()
-
-    assert(sep.type == "STRING", "JOIN: STRING expected, but got "..sep.type)
-    assert(list.type == "LIST", "JOIN: LIST expected, but got "..list.type)
-
-    local tbl = {}
-    for _, value in pairs(list.value) do
-        table.insert(tbl, value.value)
-    end
-    local result = table.concat(tbl, sep.value)
-
-    M.push(M.build_string(result))
-end
-
 M.NAMES["split"] = split
-M.NAMES["join"] = join
 
 local function read_file()
     local filepath = M.pop()
@@ -506,23 +442,76 @@ local function read_file()
     end
     local content = file:read("*a")  -- lê todo o conteúdo como string
     file:close()
---    M.push(M.build_string(escape_whitespace(content)))
     M.push(M.build_string(content))
 end
-
 M.NAMES["read-file"] = read_file
 
-local function to_number()
-    local str = M.pop()
-    assert(str.type == "STRING" or str.type == "NUMBER", "TO-NUMBER: STRING expected, but got "..str.type)
-    local num = tonumber(str.value)
-    if num then
-        M.push(M.build_number(num))
-    else
-        M.error_msg("TO-NUMBER: Invalid number format")
+local function ffi()
+    local func_name = M.pop()
+    assert(func_name.type == "EXPR", "FFI: EXPR expected, but got " .. func_name.type)
+    local lua_func = M.pop()
+    assert(lua_func.type == "STRING", "FFI: STRING expected, but got " .. lua_func.type)
+    local args_count = M.pop()
+    assert(args_count.type == "NUMBER", "FFI: NUMBER expected, but got " .. args_count.type)
+    local return_type = M.pop()
+    assert(return_type.type == "STRING", "FFI: STRING expected, but got " .. return_type.type)
+
+    -- Resolve a função Lua, incluindo namespaces
+    local function resolve_function(path)
+        local parts = {}
+        for part in string.gmatch(path, "[^%.]+") do
+            table.insert(parts, part)
+        end
+
+        local func = _G
+        for _, part in ipairs(parts) do
+            func = func[part]
+            if not func then break end
+        end
+        return func
+    end
+
+    local resolved_func = resolve_function(lua_func.value)
+    assert(type(resolved_func) == "function", "FFI: " .. lua_func.value .. " is not a valid function")
+
+    -- Registra a função no ambiente da linguagem
+    M.NAMES[func_name.value] = function()
+        local args = {}
+        for i = 1, args_count.value do
+            local arg = M.pop()
+            local value = {}
+            if (arg.type == "LIST") then
+                for _, v in ipairs(arg.value) do
+                    table.insert(value, v.value)
+                end
+            else
+                value = arg.value
+            end
+            table.insert(args, value) -- Insere em ordem reversa para corresponder ao comportamento da pilha
+        end
+
+        local result = resolved_func(table.unpack(args))
+        if return_type.value == "STRING" then
+            M.push(M.build_string(tostring(result)))
+        elseif return_type.value == "NUMBER" then
+            M.push(M.build_number(tonumber(result)))
+        elseif return_type.value == "LIST" and type(result) == "table" then
+            local list = {}
+            for _, v in ipairs(result) do
+                table.insert(list, M.build_string(tostring(v)))
+            end
+            M.push(M.build_list(list))
+        end
     end
 end
 
-M.NAMES["to-number"] = to_number
+M.NAMES["ffi"] = ffi
+
+local function _type()
+    local a = M.pop()
+    local b = M.build_string(a.type)
+    M.push(a) M.push(b)
+end
+M.NAMES["type?"] = _type
 
 return M

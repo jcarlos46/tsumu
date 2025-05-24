@@ -1,0 +1,10 @@
+-- zip.tsu
+[ "a" "b" "c" ] [1 2 3]
+
+(uncons swap) dip swap
+(uncons swap) dip swap
+
+ps
+
+
+-- [["a" 1] ["b" 2] ["c" 1]]

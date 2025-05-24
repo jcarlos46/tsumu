@@ -77,10 +77,20 @@ local function _eval()
     run(expr.value)
 end
 
+local function dip()
+    local a = vm.pop()
+    assert(a.type == "EXPR", "DIP: LIST expected, but got "..a.type)
+    local b = vm.pop()
+
+    run(a.value)
+    vm.push(b)
+end
+
 vm.NAMES["def"] = def
 vm.NAMES["while"] = _while
 vm.NAMES["eval"] = _eval
 vm.NAMES["import"] = _import
+vm.NAMES["dip"] = dip
 
 ---@param filename string
 function import(filename)

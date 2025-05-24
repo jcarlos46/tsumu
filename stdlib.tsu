@@ -21,7 +21,7 @@
 (when) (() if)      def
 
 -- Operações Padrão
-(dip)  (swap quote compose call) def
+-- (dip)  (swap quote compose call) def
 (dipd) (swap (dip) dip)    def
 (dupd) ((dup) dip)         def
 (rol)  (swap (swap) dip)   def
@@ -31,32 +31,10 @@
 (call)  (eval) def
 (apply) (eval) def
 
--- printf (n... -- )
-(printf) ((dup 0 >) (swap emit 1 - ) while) def
-
 -- Factorial (n -- n')
 (fact) (dup 1 > (dup 1 - fact *) (pop 1) if) def
 (!) (fact) def
 -- 5 !  print  -- 120
-
--- Power (a b -- a^b)
-(**) ((dup 1 >) (-> dup <- 1 -) while pop len (*) reduce) def
-(^) (**) def
--- 2 4 ** -- 16
--- 5 5 ^ -- 3125
-
-
--- Max (a b -- n)
-(max) (2over > (pop) (swap pop) if) def
--- 11 10 max ps  -- [11]
-
--- Min (a b -- n)
-(min) (2over < (pop) (swap pop) if) def
--- 11 10 min ps  -- [10]
-
--- Absolute (n -- n')
-(abs) (dup 0 < (-1 *) if) def
--- -4 abs ps clear -- [4]
 
 -- Odd (n -- n')
 (odd?) (2 %) def
@@ -80,26 +58,32 @@
 (<-) (<stash) def
 
 -- List manipulation
+-- ( seq -- list )
 (list)
   ([] (len 1 >) (cons) while)
 def
 
+-- ( list -- seq )
 (unlist)
   ((size 0 >) (uncons) while pop)
 def
 
+-- ( list -- list n )
 (head)
   (uncons dupd swap (cons) dip)
 def
 
+-- ( list -- tail )
 (tail) (uncons swap pop) def
 
+-- ( list -- list )
 (reverse)
   ([] swap
     (size 0 >)
       (uncons (swap cons) dip) while pop)
 def
 
+-- ( list list -- list )
 -- TODO: criar versões para STRING e EXPR
 (concat)
   (swap reverse
@@ -107,6 +91,7 @@ def
       (uncons (swap cons) dip) while pop)
 def
 
+-- ( list expr -- list )
 (map)
   (stash> [] swap
     (size 0 >)
@@ -114,6 +99,7 @@ def
   <stash 2pop reverse)
 def
 
+-- ( list expr -- list )
 (filter)
   (stash> [] swap
     (size 0 >)
@@ -122,9 +108,34 @@ def
   <stash 2pop reverse)
 def
 
+-- ( list expr -- n )
 (fold)
   (stash> uncons
     (size 0 >)
       (uncons <stash dup stash> dip) while
   <stash 2pop)
 def
+
+(number?) (type? "NUMBER" =) def
+(string?) (type? "STRING" =) def
+(list?)   (type? "LIST"   =) def
+
+-- FFI - Foreign Function Interface
+-- ( type args_count lua-func func-name -- )
+"STRING" 2 "table.concat" (join)  ffi
+"VOID"   1 "print"        (print) ffi
+"STRING" 1 "trim"         (trim)  ffi
+-- IO
+"VOID"   1 "io.write" (io-write) ffi
+"STRING" 0 "io.read"  (io-read)  ffi
+-- MATH
+"NUMBER" 1 "math.abs" (abs) ffi
+"NUMBER" 2 "math.pow" (pow) ffi
+"NUMBER" 2 "math.min" (min) ffi
+"NUMBER" 2 "math.max" (abs) ffi
+
+-- TODO: create C FFI
+-- Example:
+-- "NUMBER" 2
+-- "double pow(double base, double expoente);"
+-- (pow) ffic
