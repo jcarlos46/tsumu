@@ -21,98 +21,104 @@ function M.tokenize(input)
     local result = {}
     input = tostring(input)
     for line in input:gmatch("[^\n]+") do
-        line = trim(line)
-        if line:sub(1, 2) == "--" then
-            -- Ignorar comentários
-        else
-            local i = 1
-            while i <= #line do
-                local c = line:sub(i, i)
+        -- Ignora comentários e espaços em branco
+        local _line = trim(line)
+        local result_line = {nil}
+        if line:sub(1, 2) ~= "--" then
+            result_line = {}
+            for part in string.gmatch(_line, "([^--]+)") do
+                table.insert(result_line, trim(part))
+            end
+        end
+        line = result_line[1] or ""
 
-                if c == "(" then
-                    -- Expressão entre parênteses
-                    local expr = ""
-                    local depth = 1
-                    i = i + 1
-                    while i <= #line and depth > 0 do
-                        local ch = line:sub(i, i)
-                        if ch == "(" then
-                            depth = depth + 1
-                        elseif ch == ")" then
-                            depth = depth - 1
-                            if depth == 0 then
-                                i = i + 1
-                                break
-                            end
-                        end
-                        expr = expr .. ch
-                        i = i + 1
-                    end
-                    table.insert(result, return_token("EXPR", expr))
+        local i = 1
+        while i <= #line do
+            local c = line:sub(i, i)
 
-                elseif c == "[" then
-                    -- Lista entre colchetes
-                    local list = ""
-                    local depth = 1
-                    i = i + 1
-                    while i <= #line and depth > 0 do
-                        local ch = line:sub(i, i)
-                        if ch == "[" then
-                            depth = depth + 1
-                        elseif ch == "]" then
-                            depth = depth - 1
-                            if depth == 0 then
-                                i = i + 1
-                                break
-                            end
-                        end
-                        list = list .. ch
-                        i = i + 1
-                    end
-                    table.insert(result, M.parse_list(return_token("LIST", list)))
-
-                elseif c == "\"" then
-                    -- String entre aspas
-                    local str = ""
-                    i = i + 1
-                    while i <= #line do
-                        local ch = line:sub(i, i)
-                        if ch == "\"" then
+            if c == "(" then
+                -- Expressão entre parênteses
+                local expr = ""
+                local depth = 1
+                i = i + 1
+                while i <= #line and depth > 0 do
+                    local ch = line:sub(i, i)
+                    if ch == "(" then
+                        depth = depth + 1
+                    elseif ch == ")" then
+                        depth = depth - 1
+                        if depth == 0 then
                             i = i + 1
                             break
-                        elseif ch == "\\" and i < #line then
-                            local next_ch = line:sub(i + 1, i + 1)
-                            if next_ch == "\"" or next_ch == "\\" then
-                                str = str .. next_ch
-                                i = i + 2
-                            else
-                                str = str .. ch
-                                i = i + 1
-                            end
+                        end
+                    end
+                    expr = expr .. ch
+                    i = i + 1
+                end
+                table.insert(result, return_token("EXPR", expr))
+
+            elseif c == "[" then
+                -- Lista entre colchetes
+                local list = ""
+                local depth = 1
+                i = i + 1
+                while i <= #line and depth > 0 do
+                    local ch = line:sub(i, i)
+                    if ch == "[" then
+                        depth = depth + 1
+                    elseif ch == "]" then
+                        depth = depth - 1
+                        if depth == 0 then
+                            i = i + 1
+                            break
+                        end
+                    end
+                    list = list .. ch
+                    i = i + 1
+                end
+                table.insert(result, M.parse_list(return_token("LIST", list)))
+
+            elseif c == "\"" then
+                -- String entre aspas
+                local str = ""
+                i = i + 1
+                while i <= #line do
+                    local ch = line:sub(i, i)
+                    if ch == "\"" then
+                        i = i + 1
+                        break
+                    elseif ch == "\\" and i < #line then
+                        local next_ch = line:sub(i + 1, i + 1)
+                        if next_ch == "\"" or next_ch == "\\" then
+                            str = str .. next_ch
+                            i = i + 2
                         else
                             str = str .. ch
                             i = i + 1
                         end
-                    end
-                    table.insert(result, return_token("STRING", tostring(str)))
-
-                elseif c:match("%s") then
-                    i = i + 1 -- Ignorar espaços
-
-                else
-                    -- Token padrão (número ou nome)
-                    local token = ""
-                    while i <= #line and not line:sub(i, i):match("[%s%(%)%[%]\"]") do
-                        token = token .. line:sub(i, i)
+                    else
+                        str = str .. ch
                         i = i + 1
                     end
-                    if is_number(token) then
-                        table.insert(result, return_token("NUMBER", tonumber(token)))
-                    elseif is_name(token) then
-                        table.insert(result, return_token("NAME", tostring(token)))
-                    else
-                        table.insert(result, return_token("UNKNOWN", token))
-                    end
+                end
+                table.insert(result, return_token("STRING", tostring(str)))
+
+            elseif c:match("%s") then
+                i = i + 1 -- Ignorar espaços
+
+            else
+                -- Token padrão (número ou nome)
+                local token = ""
+                while i <= #line and not line:sub(i, i):match("[%s%(%)%[%]\"]") do
+                    token = token .. line:sub(i, i)
+                    i = i + 1
+                end
+                if is_number(token) then
+                    table.insert(result, return_token("NUMBER", tonumber(token)))
+                elseif is_name(token) then
+                    table.insert(result, return_token("NAME", tostring(token)))
+                else
+                    table.insert(result, return_token("UNKNOWN", token))
                 end
             end
         end

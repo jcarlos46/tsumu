@@ -102,30 +102,21 @@ function import(filename)
     local file = io.open(filename, "r")
     if not file then
         vm.error_msg("Não foi possível abrir o arquivo de entrada: " .. filename)
-	return
+        return
     end
-    local table_code = {}
-    for line in file:lines() do
-        -- Remove linhas que começam com espaços/tabs seguidos de --
-        if not line:match("^%s*%-%-") then
-            table.insert(table_code, line)
-        end
-    end
+    local code = file:read("*a")
+
     file:close()
 
     if vm.INT_MODE then
         print("Tsumu: "..filename.." imported.")
     end
 
-    local code = table.concat(table_code, " ")
     run(code)
 end
 
 if (arg[1] ~= nil) then
-    for _, u in ipairs(arg) do
-        vm.push(vm.build_string(u))
-    end
+    import(arg[1])
+else
+    import("cli.tsu")
 end
-
-import("cli.tsu")
-
